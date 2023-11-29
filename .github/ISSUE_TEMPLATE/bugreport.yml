@@ -1,0 +1,40 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+        Please describe your issue in as much detail as possible for us to understand it. Please
+        create **one GitHub issue for each problem you experience**. Otherwise it is hard to track
+        the progress. Thanks!
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Please describe your issue in as much detail as possible.
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce the issue
+      description: |
+        Please add a minimal configuration that allows us to reproduce the issue.
+      placeholder: Tell us what you see!
+      render: HCL
+    validations:
+      required: true
+  - type: textarea
+    id: psv
+    attributes:
+      label: Terraform and module version
+      description: Please paste the output of `terraform -version` in this output field.
+      render: Shell
+    validations:
+      required: true
