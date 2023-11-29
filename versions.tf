@@ -4,6 +4,14 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "3.82.0"
     }
+    template = {
+      source  = "hashicorp/template"
+      version = "2.2.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
+    }
   }
 }
 
