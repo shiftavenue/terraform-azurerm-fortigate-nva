@@ -1,0 +1,130 @@
+variable "resource_suffix" {
+  type        = list(string)
+  description = "Suffix used with Azure Naming module"
+  default     = ["fg", "nva"]
+}
+
+variable "location" {
+  type        = string
+  description = "Azure Region"
+}
+
+variable "license_type" {
+  type        = string
+  description = "Type of license to apply, either PAYG or BYOL. If BYOL is used, license_file must be set"
+  default     = "payg"
+
+  validation {
+    condition     = contains(["payg", "byol"], var.license_type)
+    error_message = "Valid values for license_type are (payg, byol)"
+  }
+}
+
+variable "vm_publisher" {
+  type        = string
+  description = "Value of the publisher parameter for the FortiGate VM image"
+  default     = "fortinet"
+}
+
+variable "vm_offer" {
+  type        = string
+  description = "Value of the offer parameter for the FortiGate VM image"
+  default     = "fortinet_fortigate-vm_v5"
+}
+
+variable "vm_size" {
+  type        = string
+  description = "Size of the VM, needs to fit your desired Fortigate operating model, e.g. number of NICs"
+  default     = "Standard_F4s"
+}
+
+variable "fgtsku" {
+  type = map(any)
+  default = {
+    byol = "fortinet_fg-vm"
+    payg = "fortinet_fg-vm_payg_2022"
+  }
+}
+
+variable "fgtversion" {
+  type    = string
+  default = "7.0.12"
+}
+
+variable "adminusername" {
+  type    = string
+  default = "azureadmin"
+}
+
+variable "adminpassword" {
+  type      = string
+  sensitive = true
+  default   = "Fortinet123#"
+}
+
+variable "resource_group_tags" {
+  type     = map(string)
+  default  = null
+  nullable = true
+}
+
+variable "skip_config" {
+  type        = bool
+  description = "Skip the configuration of the FortiGate"
+  default     = false
+}
+
+variable "license_file" {
+  type        = string
+  description = "Path to the license file to use for BYOL"
+  default     = ""
+}
+
+variable "fortigate_admin_port" {
+  type        = number
+  description = "Port to use for the admin interface"
+  default     = 8443
+}
+
+/*
+cidrnetmask 24 zu 255
+cidrhost netzwerk zu IP mit Nummer
+*/
+variable "fortigate_vnet_config" {
+  type = object({
+    vnet_address_space           = optional(string, "172.1.0.0/16")
+    public_subnet_address_space  = optional(string, "172.1.0.0/24")
+    private_subnet_address_space = optional(string, "172.1.1.0/24")
+    ha_sync_subnet_address_space = optional(string, "172.1.2.0/24")
+    ha_mgmt_subnet_address_space = optional(string, "172.1.3.0/24")
+    ha_mgmt_gateway_address      = optional(string, "172.1.3.1")
+    public_gateway_address       = optional(string, "172.1.0.1")
+  })
+}
+
+variable "tenant_id" {
+  type        = string
+  default     = ""
+  description = "If using an App Registration with a client secret, specify the tenant ID alongside subscription, client_id and client_secret"
+}
+variable "subscription_id" {
+  type        = string
+  default     = ""
+  description = "If using an App Registration with a client secret, specify the subscription ID alongside tenant, client_id and client_secret"
+}
+variable "client_id" {
+  type        = string
+  default     = ""
+  description = "If using an App Registration with a client secret, specify the client_id alongside subscription, tenant ID and client_secret"
+}
+variable "client_secret" {
+  type        = string
+  default     = ""
+  description = "If using an App Registration with a client secret, specify the client_secret alongside subscription, client_id and tenant ID"
+}
+
+variable "use_accelerated_networking" {
+  type        = bool
+  description = "Use accelerated networking. Ensure that your VM size supports this feature."
+  default     = true
+}
