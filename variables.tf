@@ -88,19 +88,21 @@ variable "fortigate_admin_port" {
 
 variable "fortigate_vnet_config" {
   type = object({
-    vnet_address_space           = optional(string, "172.1.0.0/16")
-    public_subnet_address_space  = optional(string, "172.1.0.0/24")
-    private_subnet_address_space = optional(string, "172.1.1.0/24")
-    ha_sync_subnet_address_space = optional(string, "172.1.2.0/24")
-    ha_mgmt_subnet_address_space = optional(string, "172.1.3.0/24")
-    ha_mgmt_gateway_address      = optional(string, "172.1.3.1")
-    public_gateway_address       = optional(string, "172.1.0.1")
+    vnet_address_space           = string
+    vnet_name                    = optional(string)
+    public_subnet_address_space  = string
+    public_subnet_name           = optional(string)
+    private_subnet_address_space = string
+    private_subnet_name          = optional(string)
+    ha_mgmt_subnet_address_space = string
+    ha_mgmt_subnet_name          = optional(string)
+    ha_mgmt_gateway_address      = string
+    public_gateway_address       = string
   })
   default = {
     vnet_address_space           = "172.1.0.0/16"
     public_subnet_address_space  = "172.1.0.0/24"
     private_subnet_address_space = "172.1.1.0/24"
-    ha_sync_subnet_address_space = "172.1.2.0/24"
     ha_mgmt_subnet_address_space = "172.1.3.0/24"
     ha_mgmt_gateway_address      = "172.1.3.1"
     public_gateway_address       = "172.1.0.1"

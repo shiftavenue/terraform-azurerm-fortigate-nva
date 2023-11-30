@@ -76,35 +76,28 @@ resource "azurerm_virtual_machine" "fortinetvm" {
 }
 
 resource "azurerm_virtual_network" "fortinetvnet" {
-  name                = module.naming.virtual_network.name
+  name                = var.fortigate_vnet_config.vnet_name == "" ? module.naming.virtual_network.name : var.fortigate_vnet_config.vnet_name
   address_space       = [var.fortigate_vnet_config.vnet_address_space]
   location            = var.location
   resource_group_name = azurerm_resource_group.fortinetrg.name
 }
 
 resource "azurerm_subnet" "publicsubnet" {
-  name                 = join("-", [module.naming.subnet.name, "public"])
+  name                 = var.fortigate_vnet_config.public_subnet_name == "" ? join("-", [module.naming.subnet.name, "public"]) : var.fortigate_vnet_config.public_subnet_name
   resource_group_name  = azurerm_resource_group.fortinetrg.name
   virtual_network_name = azurerm_virtual_network.fortinetvnet.name
   address_prefixes     = [var.fortigate_vnet_config.public_subnet_address_space]
 }
 
 resource "azurerm_subnet" "privatesubnet" {
-  name                 = join("-", [module.naming.subnet.name, "private"])
+  name                 = var.fortigate_vnet_config.private_subnet_name == "" ? join("-", [module.naming.subnet.name, "private"]) : var.fortigate_vnet_config.private_subnet_name
   resource_group_name  = azurerm_resource_group.fortinetrg.name
   virtual_network_name = azurerm_virtual_network.fortinetvnet.name
   address_prefixes     = [var.fortigate_vnet_config.private_subnet_address_space]
 }
 
-resource "azurerm_subnet" "hasyncsubnet" {
-  name                 = join("-", [module.naming.subnet.name, "hasync"])
-  resource_group_name  = azurerm_resource_group.fortinetrg.name
-  virtual_network_name = azurerm_virtual_network.fortinetvnet.name
-  address_prefixes     = [var.fortigate_vnet_config.ha_sync_subnet_address_space]
-}
-
 resource "azurerm_subnet" "hamgmtsubnet" {
-  name                 = join("-", [module.naming.subnet.name, "hamgmt"])
+  name                 = var.fortigate_vnet_config.ha_mgmt_subnet_name == "" ? join("-", [module.naming.subnet.name, "hamgmt"]) : var.fortigate_vnet_config.ha_mgmt_subnet_name
   resource_group_name  = azurerm_resource_group.fortinetrg.name
   virtual_network_name = azurerm_virtual_network.fortinetvnet.name
   address_prefixes     = [var.fortigate_vnet_config.ha_mgmt_subnet_address_space]
