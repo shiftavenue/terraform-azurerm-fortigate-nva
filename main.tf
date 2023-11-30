@@ -18,6 +18,13 @@ resource "azurerm_storage_account" "fortinetstorageaccount" {
   account_tier             = "Standard"
 }
 
+resource "azurerm_user_assigned_identity" "umi" {
+  count               = var.assign_managed_identity ? 1 : 0
+  name                = module.naming.user_assigned_identity.name
+  location            = var.location
+  resource_group_name = azurerm_resource_group.fortinetrg.name
+}
+
 resource "azurerm_virtual_machine" "fortinetvm" {
   count                        = 2
   name                         = join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]])
@@ -28,6 +35,14 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   vm_size                      = var.vm_size
   zones                        = [count.index + 1]
   depends_on                   = [azurerm_storage_account.fortinetstorageaccount, azurerm_marketplace_agreement.fortinet]
+
+  dynamic "identity" {
+    for_each = var.assign_managed_identity ? toset([1]) : toset([])
+    content {
+      identity_ids = [azurerm_user_assigned_identity.umi[0].principal_id]
+      type         = "UserAssigned"
+    }
+  }
 
   storage_image_reference {
     publisher = var.vm_publisher

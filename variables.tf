@@ -89,13 +89,13 @@ variable "fortigate_admin_port" {
 variable "fortigate_vnet_config" {
   type = object({
     vnet_address_space           = string
-    vnet_name                    = optional(string)
+    vnet_name                    = optional(string, "")
     public_subnet_address_space  = string
-    public_subnet_name           = optional(string)
+    public_subnet_name           = optional(string, "")
     private_subnet_address_space = string
-    private_subnet_name          = optional(string)
+    private_subnet_name          = optional(string, "")
     ha_mgmt_subnet_address_space = string
-    ha_mgmt_subnet_name          = optional(string)
+    ha_mgmt_subnet_name          = optional(string, "")
     ha_mgmt_gateway_address      = string
     public_gateway_address       = string
   })
@@ -133,5 +133,11 @@ variable "client_secret" {
 variable "use_accelerated_networking" {
   type        = bool
   description = "Use accelerated networking. Ensure that your VM size supports this feature."
+  default     = true
+}
+
+variable "assign_managed_identity" {
+  type        = bool
+  description = "Assign a user-assigned managed identity to the FortiGate VM"
   default     = true
 }
