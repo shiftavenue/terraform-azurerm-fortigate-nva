@@ -69,8 +69,8 @@ variable "resource_group_tags" {
 }
 
 variable "resource_group_name" {
-  type     = string
-  default  = ""
+  type        = string
+  default     = ""
   description = "Resource group name. Specify if resource group name should not be auto-generated"
 }
 
