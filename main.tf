@@ -5,7 +5,7 @@ resource "azurerm_marketplace_agreement" "fortinet" {
 }
 
 resource "azurerm_resource_group" "fortinetrg" {
-  name     = module.naming.resource_group.name
+  name     = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   location = var.location
   tags     = var.resource_group_tags
 }

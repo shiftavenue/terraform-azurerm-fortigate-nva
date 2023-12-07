@@ -68,6 +68,12 @@ variable "resource_group_tags" {
   nullable = true
 }
 
+variable "resource_group_name" {
+  type     = string
+  default  = ""
+  description = "Resource group name. Specify if resource group name should not be auto-generated"
+}
+
 variable "skip_config" {
   type        = bool
   description = "Skip the configuration of the FortiGate"
