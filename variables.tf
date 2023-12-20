@@ -75,13 +75,20 @@ variable "resource_group_name" {
 }
 
 variable "existing_resource_ids" {
-  type = optional(object({
+  type = object({
     resource_group_id = optional(string, "")
     vnet_id           = optional(string, "")
     public_subnet_id  = optional(string, "")
     private_subnet_id = optional(string, "")
     ha_mgmt_subnet_id = optional(string, "")
-  }), null)
+  })
+  default = {
+    ha_mgmt_subnet_id = ""
+    vnet_id           = ""
+    public_subnet_id  = ""
+    private_subnet_id = ""
+    resource_group_id = ""
+  }
 }
 
 variable "skip_config" {
