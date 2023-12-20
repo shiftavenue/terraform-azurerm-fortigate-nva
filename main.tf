@@ -40,7 +40,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   dynamic "identity" {
     for_each = var.assign_managed_identity ? toset([1]) : toset([])
     content {
-      identity_ids = [azurerm_user_assigned_identity.umi[0].principal_id]
+      identity_ids = [azurerm_user_assigned_identity.umi[0].id]
       type         = "UserAssigned"
     }
   }
