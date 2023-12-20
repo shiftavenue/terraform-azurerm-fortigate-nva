@@ -5,14 +5,15 @@ resource "azurerm_marketplace_agreement" "fortinet" {
 }
 
 resource "azurerm_resource_group" "fortinetrg" {
-  name     = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
+  count    = var.existing_resource_ids.resource_group_id == "" ? 1 : 0
+  name     = local.resource_group_name
   location = var.location
   tags     = var.resource_group_tags
 }
 
 resource "azurerm_storage_account" "fortinetstorageaccount" {
   name                     = module.naming.storage_account.name_unique
-  resource_group_name      = azurerm_resource_group.fortinetrg.name
+  resource_group_name      = local.resource_group_name
   location                 = var.location
   account_replication_type = "LRS"
   account_tier             = "Standard"
@@ -22,14 +23,14 @@ resource "azurerm_user_assigned_identity" "umi" {
   count               = var.assign_managed_identity ? 1 : 0
   name                = module.naming.user_assigned_identity.name
   location            = var.location
-  resource_group_name = azurerm_resource_group.fortinetrg.name
+  resource_group_name = local.resource_group_name
 }
 
 resource "azurerm_virtual_machine" "fortinetvm" {
   count                        = 2
   name                         = join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]])
   location                     = var.location
-  resource_group_name          = azurerm_resource_group.fortinetrg.name
+  resource_group_name          = local.resource_group_name
   network_interface_ids        = [azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id]
   primary_network_interface_id = azurerm_network_interface.managementinterface[count.index].id
   vm_size                      = var.vm_size
@@ -91,30 +92,34 @@ resource "azurerm_virtual_machine" "fortinetvm" {
 }
 
 resource "azurerm_virtual_network" "fortinetvnet" {
-  name                = var.fortigate_vnet_config.vnet_name == "" ? module.naming.virtual_network.name : var.fortigate_vnet_config.vnet_name
+  count               = var.existing_resource_ids.vnet_id == "" ? 1 : 0
+  name                = local.vnet_name
   address_space       = [var.fortigate_vnet_config.vnet_address_space]
   location            = var.location
-  resource_group_name = azurerm_resource_group.fortinetrg.name
+  resource_group_name = local.resource_group_name
 }
 
 resource "azurerm_subnet" "publicsubnet" {
+  count                = var.existing_resource_ids.public_subnet_id == "" ? 1 : 0
   name                 = var.fortigate_vnet_config.public_subnet_name == "" ? join("-", [module.naming.subnet.name, "public"]) : var.fortigate_vnet_config.public_subnet_name
-  resource_group_name  = azurerm_resource_group.fortinetrg.name
-  virtual_network_name = azurerm_virtual_network.fortinetvnet.name
+  resource_group_name  = local.resource_group_name
+  virtual_network_name = local.vnet_name
   address_prefixes     = [var.fortigate_vnet_config.public_subnet_address_space]
 }
 
 resource "azurerm_subnet" "privatesubnet" {
+  count                = var.existing_resource_ids.private_subnet_id == "" ? 1 : 0
   name                 = var.fortigate_vnet_config.private_subnet_name == "" ? join("-", [module.naming.subnet.name, "private"]) : var.fortigate_vnet_config.private_subnet_name
-  resource_group_name  = azurerm_resource_group.fortinetrg.name
-  virtual_network_name = azurerm_virtual_network.fortinetvnet.name
+  resource_group_name  = local.resource_group_name
+  virtual_network_name = local.vnet_name
   address_prefixes     = [var.fortigate_vnet_config.private_subnet_address_space]
 }
 
 resource "azurerm_subnet" "hamgmtsubnet" {
+  count                = var.existing_resource_ids.ha_mgmt_subnet_id == "" ? 1 : 0
   name                 = var.fortigate_vnet_config.ha_mgmt_subnet_name == "" ? join("-", [module.naming.subnet.name, "hamgmt"]) : var.fortigate_vnet_config.ha_mgmt_subnet_name
-  resource_group_name  = azurerm_resource_group.fortinetrg.name
-  virtual_network_name = azurerm_virtual_network.fortinetvnet.name
+  resource_group_name  = local.resource_group_name
+  virtual_network_name = local.vnet_name
   address_prefixes     = [var.fortigate_vnet_config.ha_mgmt_subnet_address_space]
 }
 
@@ -122,7 +127,7 @@ resource "azurerm_subnet" "hamgmtsubnet" {
 resource "azurerm_public_ip" "ClusterPublicIP" {
   name                = join("-", [module.naming.public_ip.name, "cluster"])
   location            = var.location
-  resource_group_name = azurerm_resource_group.fortinetrg.name
+  resource_group_name = local.resource_group_name
   sku                 = "Standard"
   allocation_method   = "Static"
 
@@ -132,7 +137,7 @@ resource "azurerm_public_ip" "mgmtip" {
   count               = 2
   name                = join("-", [module.naming.public_ip.name, "ha-mgmt", local.activepassive[count.index]])
   location            = var.location
-  resource_group_name = azurerm_resource_group.fortinetrg.name
+  resource_group_name = local.resource_group_name
   sku                 = "Standard"
   allocation_method   = "Static"
 
@@ -142,7 +147,7 @@ resource "azurerm_public_ip" "mgmtip" {
 resource "azurerm_network_security_group" "publicnetworknsg" {
   name                = join("-", [module.naming.network_security_group.name, "public"])
   location            = var.location
-  resource_group_name = azurerm_resource_group.fortinetrg.name
+  resource_group_name = local.resource_group_name
 
   security_rule {
     name                       = "TCP"
@@ -160,7 +165,7 @@ resource "azurerm_network_security_group" "publicnetworknsg" {
 resource "azurerm_network_security_group" "privatenetworknsg" {
   name                = join("-", [module.naming.network_security_group.name, "private"])
   location            = var.location
-  resource_group_name = azurerm_resource_group.fortinetrg.name
+  resource_group_name = local.resource_group_name
 
   security_rule {
     name                       = "All"
@@ -186,7 +191,7 @@ resource "azurerm_network_security_rule" "outgoing_public" {
   destination_port_range      = "*"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.fortinetrg.name
+  resource_group_name         = local.resource_group_name
   network_security_group_name = azurerm_network_security_group.publicnetworknsg.name
 }
 
@@ -200,7 +205,7 @@ resource "azurerm_network_security_rule" "outgoing_private" {
   destination_port_range      = "*"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.fortinetrg.name
+  resource_group_name         = local.resource_group_name
   network_security_group_name = azurerm_network_security_group.privatenetworknsg.name
 }
 
@@ -208,12 +213,12 @@ resource "azurerm_network_interface" "managementinterface" {
   count                         = 2
   name                          = join("-", [module.naming.network_interface.name, "ha-mgmt", local.activepassive[count.index]])
   location                      = var.location
-  resource_group_name           = azurerm_resource_group.fortinetrg.name
+  resource_group_name           = local.resource_group_name
   enable_accelerated_networking = var.use_accelerated_networking
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.hamgmtsubnet.id
+    subnet_id                     = var.existing_resource_ids.ha_mgmt_subnet_id == "" ? azurerm_subnet.hamgmtsubnet[0].id : var.existing_resource_ids.ha_mgmt_subnet_id
     private_ip_address_allocation = "Static"
     private_ip_address            = cidrhost(var.fortigate_vnet_config.ha_mgmt_subnet_address_space, (count.index + 4))
     primary                       = true
@@ -225,13 +230,13 @@ resource "azurerm_network_interface" "publicinterface" {
   count                         = 2
   name                          = join("-", [module.naming.network_interface.name, "public", local.activepassive[count.index]])
   location                      = var.location
-  resource_group_name           = azurerm_resource_group.fortinetrg.name
+  resource_group_name           = local.resource_group_name
   enable_ip_forwarding          = true
   enable_accelerated_networking = var.use_accelerated_networking
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.publicsubnet.id
+    subnet_id                     = var.existing_resource_ids.public_subnet_id == "" ? azurerm_subnet.publicsubnet[0].id : var.existing_resource_ids.public_subnet_id
     private_ip_address_allocation = "Static"
     private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, (count.index + 4))
     public_ip_address_id          = count.index == 0 ? azurerm_public_ip.ClusterPublicIP.id : null
@@ -243,13 +248,13 @@ resource "azurerm_network_interface" "privateinterface" {
   count                         = 2
   name                          = join("-", [module.naming.network_interface.name, "private", local.activepassive[count.index]])
   location                      = var.location
-  resource_group_name           = azurerm_resource_group.fortinetrg.name
+  resource_group_name           = local.resource_group_name
   enable_ip_forwarding          = true
   enable_accelerated_networking = var.use_accelerated_networking
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.privatesubnet.id
+    subnet_id                     = var.existing_resource_ids.private_subnet_id == "" ? azurerm_subnet.privatesubnet[0].id : var.existing_resource_ids.private_subnet_id
     private_ip_address_allocation = "Static"
     private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, (count.index + 4))
   }
@@ -281,14 +286,14 @@ resource "azurerm_network_interface_security_group_association" "privatePortnsg"
 
 resource "azurerm_route_table" "internal" {
   name                = module.naming.route_table.name
-  location            = azurerm_resource_group.fortinetrg.location
-  resource_group_name = azurerm_resource_group.fortinetrg.name
+  location            = var.location
+  resource_group_name = local.resource_group_name
 }
 
 resource "azurerm_route" "default" {
   depends_on          = [azurerm_virtual_machine.fortinetvm]
   name                = "default"
-  resource_group_name = azurerm_resource_group.fortinetrg.name
+  resource_group_name = local.resource_group_name
   route_table_name    = azurerm_route_table.internal.name
   address_prefix      = "0.0.0.0/0"
   next_hop_type       = "VirtualAppliance"
@@ -298,7 +303,7 @@ resource "azurerm_route" "default" {
 
 resource "azurerm_subnet_route_table_association" "internalassociate" {
   depends_on     = [azurerm_route_table.internal]
-  subnet_id      = azurerm_subnet.privatesubnet.id
+  subnet_id      = var.existing_resource_ids.private_subnet_id == "" ? azurerm_subnet.privatesubnet[0].id : var.existing_resource_ids.private_subnet_id
   route_table_id = azurerm_route_table.internal.id
 }
 
@@ -324,7 +329,7 @@ data "template_file" "forticonf" {
     clientid            = var.client_id
     clientsecret        = var.client_secret
     adminsport          = var.fortigate_admin_port
-    resourcegroup       = azurerm_resource_group.fortinetrg.name
+    resourcegroup       = local.resource_group_name
     clusterip           = azurerm_public_ip.ClusterPublicIP.name
     routename           = azurerm_route_table.internal.name
   }

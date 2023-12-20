@@ -74,6 +74,16 @@ variable "resource_group_name" {
   description = "Resource group name. Specify if resource group name should not be auto-generated"
 }
 
+variable "existing_resource_ids" {
+  type = optional(object({
+    resource_group_id = optional(string, "")
+    vnet_id           = optional(string, "")
+    public_subnet_id  = optional(string, "")
+    private_subnet_id = optional(string, "")
+    ha_mgmt_subnet_id = optional(string, "")
+  }), null)
+}
+
 variable "skip_config" {
   type        = bool
   description = "Skip the configuration of the FortiGate"
