@@ -332,5 +332,6 @@ data "template_file" "forticonf" {
     resourcegroup       = local.resource_group_name
     clusterip           = azurerm_public_ip.ClusterPublicIP.name
     routename           = azurerm_route_table.internal.name
+    hostname            = join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]])
   }
 }
