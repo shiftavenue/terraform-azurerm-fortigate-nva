@@ -45,7 +45,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   primary_network_interface_id = azurerm_network_interface.managementinterface[count.index].id
   vm_size                      = var.vm_size
 
-  zones               = length(var.availability_zones) > 0 ? var.availability_zones : []
+  zones               = length(var.availability_zones) > 0 ? var.availability_zones : null
   availability_set_id = var.deploy_availability_set ? azurerm_availability_set.av[0].id : null
 
   depends_on = [azurerm_storage_account.fortinetstorageaccount, azurerm_marketplace_agreement.fortinet]
@@ -252,7 +252,7 @@ resource "azurerm_network_interface" "publicinterface" {
     subnet_id                     = var.existing_resource_ids.public_subnet_id == "" ? azurerm_subnet.publicsubnet[0].id : var.existing_resource_ids.public_subnet_id
     private_ip_address_allocation = "Static"
     private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, (count.index + 4))
-    public_ip_address_id          = count.index == 0 ? azurerm_public_ip.ClusterPublicIP.id : null
+    public_ip_address_id          = var.deploy_load_balancer == false && count.index == 0 ? azurerm_public_ip.ClusterPublicIP.id : null
   }
 }
 
@@ -329,7 +329,6 @@ resource "azurerm_lb" "internal" {
   sku_tier = "Regional"
 
   frontend_ip_configuration {
-    public_ip_address_id          = azurerm_public_ip.ClusterPublicIP.id
     private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, 20)
     private_ip_address_allocation = "Static"
     name                          = join("-", [join("-", [module.naming.lb.name, "internal"]), "frontend"])
@@ -347,11 +346,8 @@ resource "azurerm_lb" "external" {
   sku_tier = "Regional"
 
   frontend_ip_configuration {
-    public_ip_address_id          = azurerm_public_ip.ClusterPublicIP.id
-    private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, 20)
-    private_ip_address_allocation = "Static"
-    name                          = join("-", [join("-", [module.naming.lb.name, "external"]), "frontend"])
-    subnet_id                     = var.existing_resource_ids.public_subnet_id == "" ? azurerm_subnet.publicsubnet[0].id : var.existing_resource_ids.public_subnet_id
+    public_ip_address_id = azurerm_public_ip.ClusterPublicIP.id
+    name                 = join("-", [join("-", [module.naming.lb.name, "external"]), "frontend"])
   }
 }
 
