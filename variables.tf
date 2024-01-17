@@ -164,3 +164,21 @@ variable "assign_managed_identity" {
   description = "Assign a user-assigned managed identity to the FortiGate VM"
   default     = true
 }
+
+variable "availability_zones" {
+  type        = list(string)
+  description = "Availability zones to use for the FortiGate VMs. Why a list of string for numbers? Well."
+  default     = []
+}
+
+variable "deploy_availability_set" {
+  type        = bool
+  description = "Indicates that an availability set should be deployed"
+  default     = true
+}
+
+variable "deploy_load_balancer" {
+  description = "Indicates that external and internal load balancers should be deployed"
+  type        = bool
+  default     = false
+}
