@@ -366,6 +366,7 @@ resource "azurerm_lb_backend_address_pool" "external" {
 }
 
 resource "azurerm_network_interface_backend_address_pool_association" "internal" {
+  depends_on              = [azurerm_virtual_machine.fortinetvm]
   count                   = var.deploy_load_balancer ? 2 : 0
   network_interface_id    = azurerm_network_interface.privateinterface[count.index].id
   ip_configuration_name   = "ipconfig1"
@@ -373,6 +374,7 @@ resource "azurerm_network_interface_backend_address_pool_association" "internal"
 }
 
 resource "azurerm_network_interface_backend_address_pool_association" "external" {
+  depends_on              = [azurerm_virtual_machine.fortinetvm]
   count                   = var.deploy_load_balancer ? 2 : 0
   network_interface_id    = azurerm_network_interface.publicinterface[count.index].id
   ip_configuration_name   = "ipconfig1"
