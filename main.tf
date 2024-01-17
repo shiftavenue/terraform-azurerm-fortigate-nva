@@ -38,7 +38,7 @@ resource "azurerm_availability_set" "av" {
 
 resource "azurerm_virtual_machine" "fortinetvm" {
   count                        = 2
-  name                         = join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]])
+  name                         = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
   location                     = var.location
   resource_group_name          = local.resource_group_name
   network_interface_ids        = [azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id]
@@ -72,7 +72,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   }
 
   storage_os_disk {
-    name              = join("-", [join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]]), "osdisk"])
+    name              = join("-", [join("-", [module.naming.linux_virtual_machine.name, count.index + 1]), "osdisk"])
     caching           = "ReadWrite"
     managed_disk_type = "Standard_LRS"
     create_option     = "FromImage"
@@ -80,7 +80,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
 
   # Log data disks
   storage_data_disk {
-    name              = join("-", [join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]]), "datadisk"])
+    name              = join("-", [join("-", [module.naming.linux_virtual_machine.name, count.index + 1]), "datadisk"])
     managed_disk_type = "Standard_LRS"
     create_option     = "Empty"
     lun               = 0
@@ -88,7 +88,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   }
 
   os_profile {
-    computer_name  = join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]])
+    computer_name  = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
     admin_username = var.adminusername
     admin_password = var.adminpassword
     custom_data    = var.skip_config ? null : data.template_file.forticonf[count.index].rendered
@@ -143,17 +143,15 @@ resource "azurerm_public_ip" "ClusterPublicIP" {
   resource_group_name = local.resource_group_name
   sku                 = "Standard"
   allocation_method   = "Static"
-
 }
 
 resource "azurerm_public_ip" "mgmtip" {
   count               = 2
-  name                = join("-", [module.naming.public_ip.name, "ha-mgmt", local.activepassive[count.index]])
+  name                = join("-", [module.naming.public_ip.name, "ha-mgmt", count.index + 1])
   location            = var.location
   resource_group_name = local.resource_group_name
   sku                 = "Standard"
   allocation_method   = "Static"
-
 }
 
 //  Network Security Group
@@ -224,7 +222,7 @@ resource "azurerm_network_security_rule" "outgoing_private" {
 
 resource "azurerm_network_interface" "managementinterface" {
   count                         = 2
-  name                          = join("-", [module.naming.network_interface.name, "ha-mgmt", local.activepassive[count.index]])
+  name                          = join("-", [module.naming.network_interface.name, "ha-mgmt", count.index + 1])
   location                      = var.location
   resource_group_name           = local.resource_group_name
   enable_accelerated_networking = var.use_accelerated_networking
@@ -241,7 +239,7 @@ resource "azurerm_network_interface" "managementinterface" {
 
 resource "azurerm_network_interface" "publicinterface" {
   count                         = 2
-  name                          = join("-", [module.naming.network_interface.name, "public", local.activepassive[count.index]])
+  name                          = join("-", [module.naming.network_interface.name, "public", count.index + 1])
   location                      = var.location
   resource_group_name           = local.resource_group_name
   enable_ip_forwarding          = true
@@ -258,7 +256,7 @@ resource "azurerm_network_interface" "publicinterface" {
 
 resource "azurerm_network_interface" "privateinterface" {
   count                         = 2
-  name                          = join("-", [module.naming.network_interface.name, "private", local.activepassive[count.index]])
+  name                          = join("-", [module.naming.network_interface.name, "private", count.index + 1])
   location                      = var.location
   resource_group_name           = local.resource_group_name
   enable_ip_forwarding          = true
@@ -492,6 +490,6 @@ data "template_file" "forticonf" {
     resourcegroup       = local.resource_group_name
     clusterip           = azurerm_public_ip.ClusterPublicIP.name
     routename           = azurerm_route_table.internal.name
-    hostname            = join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]])
+    hostname            = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
   }
 }
