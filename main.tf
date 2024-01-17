@@ -233,7 +233,7 @@ resource "azurerm_network_interface" "managementinterface" {
     name                          = "ipconfig1"
     subnet_id                     = var.existing_resource_ids.ha_mgmt_subnet_id == "" ? azurerm_subnet.hamgmtsubnet[0].id : var.existing_resource_ids.ha_mgmt_subnet_id
     private_ip_address_allocation = "Static"
-    private_ip_address            = cidrhost(var.fortigate_vnet_config.ha_mgmt_subnet_address_space, (count.index + 4))
+    private_ip_address            = cidrhost(var.fortigate_vnet_config.ha_mgmt_subnet_address_space, (count.index + 5))
     primary                       = true
     public_ip_address_id          = azurerm_public_ip.mgmtip[count.index].id
   }
@@ -251,7 +251,7 @@ resource "azurerm_network_interface" "publicinterface" {
     name                          = "ipconfig1"
     subnet_id                     = var.existing_resource_ids.public_subnet_id == "" ? azurerm_subnet.publicsubnet[0].id : var.existing_resource_ids.public_subnet_id
     private_ip_address_allocation = "Static"
-    private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, (count.index + 4))
+    private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, (count.index + 5))
     public_ip_address_id          = var.deploy_load_balancer == false && count.index == 0 ? azurerm_public_ip.ClusterPublicIP.id : null
   }
 }
@@ -268,7 +268,7 @@ resource "azurerm_network_interface" "privateinterface" {
     name                          = "ipconfig1"
     subnet_id                     = var.existing_resource_ids.private_subnet_id == "" ? azurerm_subnet.privatesubnet[0].id : var.existing_resource_ids.private_subnet_id
     private_ip_address_allocation = "Static"
-    private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, (count.index + 4))
+    private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, (count.index + 5))
   }
 
 }
@@ -329,7 +329,7 @@ resource "azurerm_lb" "internal" {
   sku_tier = "Regional"
 
   frontend_ip_configuration {
-    private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, 20)
+    private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, 4)
     private_ip_address_allocation = "Static"
     name                          = join("-", [join("-", [module.naming.lb.name, "internal"]), "frontend"])
     subnet_id                     = var.existing_resource_ids.private_subnet_id == "" ? azurerm_subnet.privatesubnet[0].id : var.existing_resource_ids.private_subnet_id
