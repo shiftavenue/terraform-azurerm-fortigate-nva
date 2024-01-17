@@ -26,6 +26,16 @@ resource "azurerm_user_assigned_identity" "umi" {
   resource_group_name = local.resource_group_name
 }
 
+resource "azurerm_availability_set" "av" {
+  count                        = var.deploy_availability_set ? 1 : 0
+  name                         = module.naming.availability_set.name
+  location                     = var.location
+  resource_group_name          = local.resource_group_name
+  platform_fault_domain_count  = 2
+  platform_update_domain_count = 2
+  managed                      = true
+}
+
 resource "azurerm_virtual_machine" "fortinetvm" {
   count                        = 2
   name                         = join("-", [module.naming.linux_virtual_machine.name, local.activepassive[count.index]])
@@ -34,8 +44,11 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   network_interface_ids        = [azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id]
   primary_network_interface_id = azurerm_network_interface.managementinterface[count.index].id
   vm_size                      = var.vm_size
-  zones                        = [count.index + 1]
-  depends_on                   = [azurerm_storage_account.fortinetstorageaccount, azurerm_marketplace_agreement.fortinet]
+
+  zones               = length(var.availability_zones) > 0 ? var.availability_zones : []
+  availability_set_id = var.deploy_availability_set ? azurerm_availability_set.av[0].id : null
+
+  depends_on = [azurerm_storage_account.fortinetstorageaccount, azurerm_marketplace_agreement.fortinet]
 
   dynamic "identity" {
     for_each = var.assign_managed_identity ? toset([1]) : toset([])
@@ -241,7 +254,6 @@ resource "azurerm_network_interface" "publicinterface" {
     private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, (count.index + 4))
     public_ip_address_id          = count.index == 0 ? azurerm_public_ip.ClusterPublicIP.id : null
   }
-
 }
 
 resource "azurerm_network_interface" "privateinterface" {
@@ -307,6 +319,156 @@ resource "azurerm_subnet_route_table_association" "internalassociate" {
   route_table_id = azurerm_route_table.internal.id
 }
 
+resource "azurerm_lb" "internal" {
+  count               = var.deploy_load_balancer ? 1 : 0
+  name                = join("-", [module.naming.lb.name, "internal"])
+  resource_group_name = local.resource_group_name
+  location            = var.location
+
+  sku      = "Standard"
+  sku_tier = "Regional"
+
+  frontend_ip_configuration {
+    public_ip_address_id          = azurerm_public_ip.ClusterPublicIP.id
+    private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, 20)
+    private_ip_address_allocation = "Static"
+    name                          = join("-", [join("-", [module.naming.lb.name, "internal"]), "frontend"])
+    subnet_id                     = var.existing_resource_ids.private_subnet_id == "" ? azurerm_subnet.privatesubnet[0].id : var.existing_resource_ids.private_subnet_id
+  }
+}
+
+resource "azurerm_lb" "external" {
+  count               = var.deploy_load_balancer ? 1 : 0
+  name                = join("-", [module.naming.lb.name, "external"])
+  resource_group_name = local.resource_group_name
+  location            = var.location
+
+  sku      = "Standard"
+  sku_tier = "Regional"
+
+  frontend_ip_configuration {
+    public_ip_address_id          = azurerm_public_ip.ClusterPublicIP.id
+    private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, 20)
+    private_ip_address_allocation = "Static"
+    name                          = join("-", [join("-", [module.naming.lb.name, "external"]), "frontend"])
+    subnet_id                     = var.existing_resource_ids.public_subnet_id == "" ? azurerm_subnet.publicsubnet[0].id : var.existing_resource_ids.public_subnet_id
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "internal" {
+  count              = var.deploy_load_balancer ? 1 : 0
+  name               = join("-", [module.naming.lb.name, "internal", "pool"])
+  loadbalancer_id    = azurerm_lb.internal[0].id
+  virtual_network_id = var.existing_resource_ids.vnet_id != "" ? var.existing_resource_ids.vnet_id : azurerm_virtual_network.fortinetvnet[0].id
+}
+
+resource "azurerm_lb_backend_address_pool" "external" {
+  count              = var.deploy_load_balancer ? 1 : 0
+  name               = join("-", [module.naming.lb.name, "external", "pool"])
+  loadbalancer_id    = azurerm_lb.external[0].id
+  virtual_network_id = var.existing_resource_ids.vnet_id != "" ? var.existing_resource_ids.vnet_id : azurerm_virtual_network.fortinetvnet[0].id
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "internal" {
+  count                   = var.deploy_load_balancer ? 2 : 0
+  network_interface_id    = azurerm_network_interface.privateinterface[count.index].id
+  ip_configuration_name   = "ipconfig1"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.internal[0].id
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "external" {
+  count                   = var.deploy_load_balancer ? 2 : 0
+  network_interface_id    = azurerm_network_interface.publicinterface[count.index].id
+  ip_configuration_name   = "ipconfig1"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.external[0].id
+}
+
+resource "azurerm_lb_probe" "port_8008_internal" {
+  count           = var.deploy_load_balancer ? 1 : 0
+  loadbalancer_id = azurerm_lb.internal[0].id
+  name            = "port_8008"
+  port            = 8008
+}
+
+resource "azurerm_lb_probe" "port_8008_external" {
+  count           = var.deploy_load_balancer ? 1 : 0
+  loadbalancer_id = azurerm_lb.external[0].id
+  name            = "port_8008"
+  port            = 8008
+}
+
+resource "azurerm_lb_rule" "port_80_external" {
+  count                          = var.deploy_load_balancer ? 1 : 0
+  loadbalancer_id                = azurerm_lb.external[0].id
+  name                           = "tcp-80"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 80
+  frontend_ip_configuration_name = azurerm_lb.external[0].frontend_ip_configuration[0].name
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.external[0].id]
+  probe_id                       = azurerm_lb_probe.port_8008_external[0].id
+  enable_floating_ip             = true
+  disable_outbound_snat          = true
+  idle_timeout_in_minutes        = 5
+  enable_tcp_reset               = false
+}
+
+resource "azurerm_lb_rule" "port_10551_external" {
+  count                          = var.deploy_load_balancer ? 1 : 0
+  loadbalancer_id                = azurerm_lb.external[0].id
+  name                           = "udp-10551"
+  protocol                       = "Udp"
+  frontend_port                  = 10551
+  backend_port                   = 10551
+  frontend_ip_configuration_name = azurerm_lb.external[0].frontend_ip_configuration[0].name
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.external[0].id]
+  probe_id                       = azurerm_lb_probe.port_8008_external[0].id
+  enable_floating_ip             = true
+  disable_outbound_snat          = true
+}
+
+resource "azurerm_lb_rule" "port_500_external" {
+  count                          = var.deploy_load_balancer ? 1 : 0
+  loadbalancer_id                = azurerm_lb.external[0].id
+  name                           = "udp-500"
+  protocol                       = "Udp"
+  frontend_port                  = 500
+  backend_port                   = 500
+  frontend_ip_configuration_name = azurerm_lb.external[0].frontend_ip_configuration[0].name
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.external[0].id]
+  probe_id                       = azurerm_lb_probe.port_8008_external[0].id
+  enable_floating_ip             = true
+  disable_outbound_snat          = true
+}
+
+resource "azurerm_lb_rule" "port_4500_external" {
+  count                          = var.deploy_load_balancer ? 1 : 0
+  loadbalancer_id                = azurerm_lb.external[0].id
+  name                           = "udp-4500"
+  protocol                       = "Udp"
+  frontend_port                  = 4500
+  backend_port                   = 4500
+  frontend_ip_configuration_name = azurerm_lb.external[0].frontend_ip_configuration[0].name
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.external[0].id]
+  probe_id                       = azurerm_lb_probe.port_8008_external[0].id
+  enable_floating_ip             = true
+  disable_outbound_snat          = true
+}
+
+resource "azurerm_lb_rule" "all_internal" {
+  count                          = var.deploy_load_balancer ? 1 : 0
+  loadbalancer_id                = azurerm_lb.internal[0].id
+  name                           = "all"
+  protocol                       = "All"
+  frontend_port                  = 0 # High available ports
+  backend_port                   = 0 # High available ports
+  frontend_ip_configuration_name = azurerm_lb.internal[0].frontend_ip_configuration[0].name
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.internal[0].id]
+  probe_id                       = azurerm_lb_probe.port_8008_internal[0].id
+  enable_floating_ip             = true
+  idle_timeout_in_minutes        = 5
+  enable_tcp_reset               = false
+}
 
 data "template_file" "forticonf" {
   count    = 2
