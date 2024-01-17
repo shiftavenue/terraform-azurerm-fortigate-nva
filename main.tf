@@ -1,7 +1,32 @@
-resource "azurerm_marketplace_agreement" "fortinet" {
-  publisher = var.vm_publisher
-  offer     = var.vm_offer
-  plan      = var.license_type == "payg" ? "fortinet_fg-vm_payg_2022" : "fortinet_fg-vm"
+data "external" "term_acceptance" {
+  program = [
+    "bash",
+    "az",
+    "vm",
+    "image",
+    "terms",
+    "accept",
+    "--urn",
+    "${var.var.vm_publisher}:${var.var.vm_offer}:${var.fgtsku[var.license_type]}:${var.var.fgtversion}"
+  ]
+}
+
+data "azapi_resource" "launchpad" {
+  parent_id              = "/subscriptions/${var.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2021-04-01"
+  name                   = var.launchpad_resource_group_name != "" ? var.launchpad_resource_group_name : module.naming.resource_group.name
+  response_export_values = ["*"]
+}
+
+resource "azapi_resource" "launchpad" {
+  count                  = var.resource_group_creation_enabled == "" ? 1 : 0
+  parent_id              = "/subscriptions/${var.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2021-04-01"
+  name                   = var.launchpad_resource_group_name != "" ? var.launchpad_resource_group_name : module.naming.resource_group.name
+  location               = var.location
+  body                   = jsonencode({})
+  response_export_values = ["*"]
+  #tags      = var.tags
 }
 
 resource "azurerm_resource_group" "fortinetrg" {
@@ -34,7 +59,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   network_interface_ids        = [azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id]
   primary_network_interface_id = azurerm_network_interface.managementinterface[count.index].id
   vm_size                      = var.vm_size
-  zones                        = [count.index + 1]
+  zones                        = var.availability_zones
   depends_on                   = [azurerm_storage_account.fortinetstorageaccount, azurerm_marketplace_agreement.fortinet]
 
   dynamic "identity" {

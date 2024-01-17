@@ -1,3 +1,8 @@
+variable "subscription_id" {
+  type        = string
+  description = "Azure subscription ID"
+}
+
 variable "resource_suffix" {
   type        = list(string)
   description = "Suffix used with Azure Naming module"
@@ -42,18 +47,24 @@ variable "fgtsku" {
   type = map(any)
   default = {
     byol = "fortinet_fg-vm"
-    payg = "fortinet_fg-vm_payg_2022"
+    payg = "fortinet_fg-vm_payg_2023"
   }
 }
 
 variable "fgtversion" {
   type    = string
-  default = "7.0.12"
+  default = "7.4.0"
+}
+
+variable "availability_zones" {
+  type        = list(number)
+  description = "Availability zones to use for the FortiGate VMs"
+  default     = []
 }
 
 variable "adminusername" {
   type    = string
-  default = "azureadmin"
+  default = "fortiadmin"
 }
 
 variable "adminpassword" {
@@ -74,21 +85,16 @@ variable "resource_group_name" {
   description = "Resource group name. Specify if resource group name should not be auto-generated"
 }
 
-variable "existing_resource_ids" {
-  type = object({
-    resource_group_id = optional(string, "")
-    vnet_id           = optional(string, "")
-    public_subnet_id  = optional(string, "")
-    private_subnet_id = optional(string, "")
-    ha_mgmt_subnet_id = optional(string, "")
-  })
-  default = {
-    ha_mgmt_subnet_id = ""
-    vnet_id           = ""
-    public_subnet_id  = ""
-    private_subnet_id = ""
-    resource_group_id = ""
-  }
+variable "allow_resource_group_creation" {
+  type        = bool
+  description = "Allow the module to create a resource group. If set to false, specify the name of an existing resource group in resource_group_name"
+  default     = true
+}
+
+variable "allow_vnet_creation" {
+  type        = bool
+  description = "Allow the module to create a virtual network. If set to false, specify the name of an existing virtual network and the required subnets public, private and hamgmt in fortigate_vnet_config"
+  default     = true
 }
 
 variable "skip_config" {
@@ -137,16 +143,13 @@ variable "tenant_id" {
   default     = ""
   description = "If using an App Registration with a client secret, specify the tenant ID alongside subscription, client_id and client_secret"
 }
-variable "subscription_id" {
-  type        = string
-  default     = ""
-  description = "If using an App Registration with a client secret, specify the subscription ID alongside tenant, client_id and client_secret"
-}
+
 variable "client_id" {
   type        = string
   default     = ""
   description = "If using an App Registration with a client secret, specify the client_id alongside subscription, tenant ID and client_secret"
 }
+
 variable "client_secret" {
   type        = string
   default     = ""

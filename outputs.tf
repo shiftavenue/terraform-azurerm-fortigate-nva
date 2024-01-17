@@ -10,3 +10,7 @@ output "ActiveManagementPublicIP" {
 output "PassiveManagementPublicIP" {
   value = azurerm_public_ip.mgmtip[1].ip_address
 }
+
+output "LicenseTerms" {
+  value = jsondecode(data.external.term_acceptance.result)
+}
