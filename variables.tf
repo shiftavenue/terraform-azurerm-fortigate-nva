@@ -127,7 +127,7 @@ variable "fortigate_vnet_config" {
     private_subnet_name          = optional(string, "")
     ha_mgmt_subnet_address_space = string
     ha_mgmt_subnet_name          = optional(string, "")
-    ha_sync_subnet_address_space =  optional(string, "")
+    ha_sync_subnet_address_space = optional(string, "")
     ha_sync_subnet_name          = optional(string, "")
     ha_mgmt_gateway_address      = string
     public_gateway_address       = string
