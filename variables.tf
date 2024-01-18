@@ -81,6 +81,7 @@ variable "existing_resource_ids" {
     public_subnet_id  = optional(string, "")
     private_subnet_id = optional(string, "")
     ha_mgmt_subnet_id = optional(string, "")
+    ha_sync_subnet_id = optional(string, "")
   })
   default = {
     ha_mgmt_subnet_id = ""
@@ -88,7 +89,14 @@ variable "existing_resource_ids" {
     public_subnet_id  = ""
     private_subnet_id = ""
     resource_group_id = ""
+    ha_sync_subnet_id = ""
   }
+}
+
+variable "custom_forti_configuration_file" {
+  type        = string
+  description = "Custom configuration file to use for the FortiGate"
+  default     = ""
 }
 
 variable "skip_config" {
@@ -119,6 +127,8 @@ variable "fortigate_vnet_config" {
     private_subnet_name          = optional(string, "")
     ha_mgmt_subnet_address_space = string
     ha_mgmt_subnet_name          = optional(string, "")
+    ha_sync_subnet_address_space =  optional(string, "")
+    ha_sync_subnet_name          = optional(string, "")
     ha_mgmt_gateway_address      = string
     public_gateway_address       = string
   })
