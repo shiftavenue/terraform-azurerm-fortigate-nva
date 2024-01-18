@@ -246,7 +246,7 @@ resource "azurerm_network_interface" "managementinterface" {
 }
 
 resource "azurerm_network_interface" "syncinterface" {
-  count                         = var.fortigate_vnet_config.ha_sync_subnet_address_space == "" ? 2 : 0
+  count                         = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? 2 : 0
   name                          = join("-", [module.naming.network_interface.name, "ha-sync", count.index + 1])
   location                      = var.location
   resource_group_name           = local.resource_group_name
@@ -374,17 +374,15 @@ resource "azurerm_lb" "external" {
 }
 
 resource "azurerm_lb_backend_address_pool" "internal" {
-  count              = var.deploy_load_balancer ? 1 : 0
-  name               = join("-", [module.naming.lb.name, "internal", "pool"])
-  loadbalancer_id    = azurerm_lb.internal[0].id
-  virtual_network_id = var.existing_resource_ids.vnet_id != "" ? var.existing_resource_ids.vnet_id : azurerm_virtual_network.fortinetvnet[0].id
+  count           = var.deploy_load_balancer ? 1 : 0
+  name            = join("-", [module.naming.lb.name, "internal", "pool"])
+  loadbalancer_id = azurerm_lb.internal[0].id
 }
 
 resource "azurerm_lb_backend_address_pool" "external" {
-  count              = var.deploy_load_balancer ? 1 : 0
-  name               = join("-", [module.naming.lb.name, "external", "pool"])
-  loadbalancer_id    = azurerm_lb.external[0].id
-  virtual_network_id = var.existing_resource_ids.vnet_id != "" ? var.existing_resource_ids.vnet_id : azurerm_virtual_network.fortinetvnet[0].id
+  count           = var.deploy_load_balancer ? 1 : 0
+  name            = join("-", [module.naming.lb.name, "external", "pool"])
+  loadbalancer_id = azurerm_lb.external[0].id
 }
 
 resource "azurerm_network_interface_backend_address_pool_association" "internal" {
@@ -496,8 +494,8 @@ data "template_file" "forticonf" {
   vars = {
     type                = var.license_type
     license_file        = var.license_file
-    syncPort_ip         = var.fortigate_vnet_config.ha_sync_subnet_address_space == "" ? azurerm_network_interface.syncinterface[count.index].ip_configuration[0].private_ip_address : ""
-    syncPort_mask       = var.fortigate_vnet_config.ha_sync_subnet_address_space == "" ? cidrnetmask(var.fortigate_vnet_config.ha_sync_subnet_address_space) : ""
+    syncPort_ip         = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[count.index].ip_configuration[0].private_ip_address : ""
+    syncPort_mask       = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? cidrnetmask(var.fortigate_vnet_config.ha_sync_subnet_address_space) : ""
     managementPort_ip   = azurerm_network_interface.managementinterface[count.index].ip_configuration[0].private_ip_address
     managementPort_mask = cidrnetmask(var.fortigate_vnet_config.ha_mgmt_subnet_address_space)
     publicPort_ip       = azurerm_network_interface.publicinterface[count.index].ip_configuration[0].private_ip_address
