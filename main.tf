@@ -273,7 +273,7 @@ resource "azurerm_network_interface" "publicinterface" {
     name                          = "ipconfig1"
     subnet_id                     = var.existing_resource_ids.public_subnet_id == "" ? azurerm_subnet.publicsubnet[0].id : var.existing_resource_ids.public_subnet_id
     private_ip_address_allocation = "Static"
-    private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, (count.index + 5))
+    private_ip_address            = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, (count.index + 4))
     public_ip_address_id          = var.deploy_load_balancer == false && count.index == 0 ? azurerm_public_ip.ClusterPublicIP.id : null
   }
 }
@@ -290,7 +290,7 @@ resource "azurerm_network_interface" "privateinterface" {
     name                          = "ipconfig1"
     subnet_id                     = var.existing_resource_ids.private_subnet_id == "" ? azurerm_subnet.privatesubnet[0].id : var.existing_resource_ids.private_subnet_id
     private_ip_address_allocation = "Static"
-    private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, (count.index + 5))
+    private_ip_address            = cidrhost(var.fortigate_vnet_config.private_subnet_address_space, (count.index + 4))
   }
 
 }
