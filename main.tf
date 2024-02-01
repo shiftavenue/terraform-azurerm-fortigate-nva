@@ -78,6 +78,8 @@ resource "azurerm_virtual_machine" "fortinetvm" {
     create_option     = "FromImage"
   }
 
+  delete_os_disk_on_termination = true
+
   # Log data disks
   storage_data_disk {
     name              = join("-", [join("-", [module.naming.linux_virtual_machine.name, count.index + 1]), "datadisk"])
@@ -86,6 +88,8 @@ resource "azurerm_virtual_machine" "fortinetvm" {
     lun               = 0
     disk_size_gb      = "30"
   }
+
+  delete_data_disks_on_termination = true
 
   os_profile {
     computer_name  = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
@@ -327,6 +331,13 @@ resource "azurerm_network_interface_security_group_association" "managementPortn
   network_security_group_id = azurerm_network_security_group.publicnetworknsg.id
 }
 
+# Connect the security group to the network interfaces
+resource "azurerm_network_interface_security_group_association" "syncPortnsg" {
+  count                     = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? 2 : 0
+  depends_on                = [azurerm_network_interface.syncinterface]
+  network_interface_id      = azurerm_network_interface.syncinterface[count.index].id
+  network_security_group_id = azurerm_network_security_group.publicnetworknsg.id
+}
 
 resource "azurerm_network_interface_security_group_association" "publicPortnsg" {
   count                     = 2
