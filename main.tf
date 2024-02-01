@@ -41,7 +41,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   name                         = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
   location                     = var.location
   resource_group_name          = local.resource_group_name
-  network_interface_ids        = [azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id]
+  network_interface_ids        = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? [azurerm_network_interface.syncinterface[count.index].id, azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id] : [azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id]
   primary_network_interface_id = azurerm_network_interface.managementinterface[count.index].id
   vm_size                      = var.vm_size
 
@@ -91,7 +91,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
     computer_name  = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
     admin_username = var.adminusername
     admin_password = var.adminpassword
-    custom_data = var.skip_config ? null : base64encode(templatefile(local.templatefilename, {
+    custom_data = var.skip_config ? null : templatefile(local.templatefilename, {
       type                = var.license_type
       license_file        = var.license_file
       syncPort_ip         = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[count.index].ip_configuration[0].private_ip_address : ""
@@ -115,7 +115,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
       clusterip           = azurerm_public_ip.ClusterPublicIP.name
       routename           = azurerm_route_table.internal.name
       hostname            = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
-    }))
+    })
   }
 
   os_profile_linux_config {
