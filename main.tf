@@ -6,14 +6,14 @@ resource "azurerm_marketplace_agreement" "fortinet" {
 
 resource "azurerm_resource_group" "fortinetrg" {
   count    = var.existing_resource_ids.resource_group_id == "" ? 1 : 0
-  name     = local.resource_group_name
+  name     = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   location = var.location
   tags     = var.resource_group_tags
 }
 
 resource "azurerm_storage_account" "fortinetstorageaccount" {
   name                     = module.naming.storage_account.name_unique
-  resource_group_name      = local.resource_group_name
+  resource_group_name      = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   location                 = var.location
   account_replication_type = "LRS"
   account_tier             = "Standard"
@@ -23,14 +23,14 @@ resource "azurerm_user_assigned_identity" "umi" {
   count               = var.assign_managed_identity ? 1 : 0
   name                = module.naming.user_assigned_identity.name
   location            = var.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
 }
 
 resource "azurerm_availability_set" "av" {
   count                        = var.deploy_availability_set ? 1 : 0
   name                         = module.naming.availability_set.name
   location                     = var.location
-  resource_group_name          = local.resource_group_name
+  resource_group_name          = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   platform_fault_domain_count  = 2
   platform_update_domain_count = 2
   managed                      = true
@@ -40,7 +40,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   count                        = 2
   name                         = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
   location                     = var.location
-  resource_group_name          = local.resource_group_name
+  resource_group_name          = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   network_interface_ids        = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? [azurerm_network_interface.syncinterface[count.index].id, azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id] : [azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id]
   primary_network_interface_id = azurerm_network_interface.managementinterface[count.index].id
   vm_size                      = var.vm_size
@@ -115,7 +115,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
       clientid            = var.client_id
       clientsecret        = var.client_secret
       adminsport          = var.fortigate_admin_port
-      resourcegroup       = local.resource_group_name
+      resourcegroup       = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
       clusterip           = azurerm_public_ip.ClusterPublicIP.name
       routename           = azurerm_route_table.internal.name
       hostname            = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
@@ -137,13 +137,13 @@ resource "azurerm_virtual_network" "fortinetvnet" {
   name                = local.vnet_name
   address_space       = [var.fortigate_vnet_config.vnet_address_space]
   location            = var.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
 }
 
 resource "azurerm_subnet" "publicsubnet" {
   count                = var.existing_resource_ids.public_subnet_id == "" ? 1 : 0
   name                 = var.fortigate_vnet_config.public_subnet_name == "" ? join("-", [module.naming.subnet.name, "public"]) : var.fortigate_vnet_config.public_subnet_name
-  resource_group_name  = local.resource_group_name
+  resource_group_name  = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   virtual_network_name = local.vnet_name
   address_prefixes     = [var.fortigate_vnet_config.public_subnet_address_space]
 }
@@ -151,7 +151,7 @@ resource "azurerm_subnet" "publicsubnet" {
 resource "azurerm_subnet" "privatesubnet" {
   count                = var.existing_resource_ids.private_subnet_id == "" ? 1 : 0
   name                 = var.fortigate_vnet_config.private_subnet_name == "" ? join("-", [module.naming.subnet.name, "private"]) : var.fortigate_vnet_config.private_subnet_name
-  resource_group_name  = local.resource_group_name
+  resource_group_name  = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   virtual_network_name = local.vnet_name
   address_prefixes     = [var.fortigate_vnet_config.private_subnet_address_space]
 }
@@ -159,7 +159,7 @@ resource "azurerm_subnet" "privatesubnet" {
 resource "azurerm_subnet" "hamgmtsubnet" {
   count                = var.existing_resource_ids.ha_mgmt_subnet_id == "" ? 1 : 0
   name                 = var.fortigate_vnet_config.ha_mgmt_subnet_name == "" ? join("-", [module.naming.subnet.name, "hamgmt"]) : var.fortigate_vnet_config.ha_mgmt_subnet_name
-  resource_group_name  = local.resource_group_name
+  resource_group_name  = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   virtual_network_name = local.vnet_name
   address_prefixes     = [var.fortigate_vnet_config.ha_mgmt_subnet_address_space]
 }
@@ -167,7 +167,7 @@ resource "azurerm_subnet" "hamgmtsubnet" {
 resource "azurerm_subnet" "hasyncsubnet" {
   count                = var.existing_resource_ids.ha_sync_subnet_id == "" ? 1 : 0
   name                 = var.fortigate_vnet_config.ha_sync_subnet_name == "" ? join("-", [module.naming.subnet.name, "hasync"]) : var.fortigate_vnet_config.ha_sync_subnet_name
-  resource_group_name  = local.resource_group_name
+  resource_group_name  = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   virtual_network_name = local.vnet_name
   address_prefixes     = [var.fortigate_vnet_config.ha_sync_subnet_address_space]
 }
@@ -176,7 +176,7 @@ resource "azurerm_subnet" "hasyncsubnet" {
 resource "azurerm_public_ip" "ClusterPublicIP" {
   name                = join("-", [module.naming.public_ip.name, "cluster"])
   location            = var.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   sku                 = "Standard"
   allocation_method   = "Static"
 }
@@ -185,7 +185,7 @@ resource "azurerm_public_ip" "mgmtip" {
   count               = 2
   name                = join("-", [module.naming.public_ip.name, "ha-mgmt", count.index + 1])
   location            = var.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   sku                 = "Standard"
   allocation_method   = "Static"
 }
@@ -194,7 +194,7 @@ resource "azurerm_public_ip" "mgmtip" {
 resource "azurerm_network_security_group" "publicnetworknsg" {
   name                = join("-", [module.naming.network_security_group.name, "public"])
   location            = var.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
 
   security_rule {
     name                       = "TCP"
@@ -212,7 +212,7 @@ resource "azurerm_network_security_group" "publicnetworknsg" {
 resource "azurerm_network_security_group" "privatenetworknsg" {
   name                = join("-", [module.naming.network_security_group.name, "private"])
   location            = var.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
 
   security_rule {
     name                       = "All"
@@ -238,7 +238,7 @@ resource "azurerm_network_security_rule" "outgoing_public" {
   destination_port_range      = "*"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = local.resource_group_name
+  resource_group_name         = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   network_security_group_name = azurerm_network_security_group.publicnetworknsg.name
 }
 
@@ -252,7 +252,7 @@ resource "azurerm_network_security_rule" "outgoing_private" {
   destination_port_range      = "*"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = local.resource_group_name
+  resource_group_name         = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   network_security_group_name = azurerm_network_security_group.privatenetworknsg.name
 }
 
@@ -260,7 +260,7 @@ resource "azurerm_network_interface" "managementinterface" {
   count                         = 2
   name                          = join("-", [module.naming.network_interface.name, "ha-mgmt", count.index + 1])
   location                      = var.location
-  resource_group_name           = local.resource_group_name
+  resource_group_name           = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   enable_accelerated_networking = var.use_accelerated_networking
 
   ip_configuration {
@@ -277,7 +277,7 @@ resource "azurerm_network_interface" "syncinterface" {
   count                         = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? 2 : 0
   name                          = join("-", [module.naming.network_interface.name, "ha-sync", count.index + 1])
   location                      = var.location
-  resource_group_name           = local.resource_group_name
+  resource_group_name           = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   enable_accelerated_networking = var.use_accelerated_networking
 
   ip_configuration {
@@ -293,7 +293,7 @@ resource "azurerm_network_interface" "publicinterface" {
   count                         = 2
   name                          = join("-", [module.naming.network_interface.name, "public", count.index + 1])
   location                      = var.location
-  resource_group_name           = local.resource_group_name
+  resource_group_name           = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   enable_ip_forwarding          = true
   enable_accelerated_networking = var.use_accelerated_networking
 
@@ -310,7 +310,7 @@ resource "azurerm_network_interface" "privateinterface" {
   count                         = 2
   name                          = join("-", [module.naming.network_interface.name, "private", count.index + 1])
   location                      = var.location
-  resource_group_name           = local.resource_group_name
+  resource_group_name           = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   enable_ip_forwarding          = true
   enable_accelerated_networking = var.use_accelerated_networking
 
@@ -356,13 +356,13 @@ resource "azurerm_network_interface_security_group_association" "privatePortnsg"
 resource "azurerm_route_table" "internal" {
   name                = module.naming.route_table.name
   location            = var.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
 }
 
 resource "azurerm_route" "default" {
   depends_on          = [azurerm_virtual_machine.fortinetvm]
   name                = "default"
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   route_table_name    = azurerm_route_table.internal.name
   address_prefix      = "0.0.0.0/0"
   next_hop_type       = "VirtualAppliance"
@@ -379,7 +379,7 @@ resource "azurerm_subnet_route_table_association" "internalassociate" {
 resource "azurerm_lb" "internal" {
   count               = var.deploy_load_balancer ? 1 : 0
   name                = join("-", [module.naming.lb.name, "internal"])
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   location            = var.location
 
   sku      = "Standard"
@@ -396,7 +396,7 @@ resource "azurerm_lb" "internal" {
 resource "azurerm_lb" "external" {
   count               = var.deploy_load_balancer ? 1 : 0
   name                = join("-", [module.naming.lb.name, "external"])
-  resource_group_name = local.resource_group_name
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
   location            = var.location
 
   sku      = "Standard"
