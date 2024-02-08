@@ -126,6 +126,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
       adminsport          = var.fortigate_admin_port
       resourcegroup       = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
       clusterip           = azurerm_public_ip.ClusterPublicIP.name
+      clusterName         = var.fortigate_cluster_name
       routename           = azurerm_route_table.internal.name
       hostname            = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
     })
@@ -470,7 +471,7 @@ resource "azurerm_lb_rule" "port_80_external" {
   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.external[0].id]
   probe_id                       = azurerm_lb_probe.port_8008_external[0].id
   enable_floating_ip             = true
-  disable_outbound_snat          = true
+  disable_outbound_snat          = false
   idle_timeout_in_minutes        = 5
   enable_tcp_reset               = false
 }
@@ -486,7 +487,7 @@ resource "azurerm_lb_rule" "port_10551_external" {
   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.external[0].id]
   probe_id                       = azurerm_lb_probe.port_8008_external[0].id
   enable_floating_ip             = true
-  disable_outbound_snat          = true
+  disable_outbound_snat          = false
 }
 
 resource "azurerm_lb_rule" "port_500_external" {
@@ -499,7 +500,7 @@ resource "azurerm_lb_rule" "port_500_external" {
   frontend_ip_configuration_name = azurerm_lb.external[0].frontend_ip_configuration[0].name
   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.external[0].id]
   probe_id                       = azurerm_lb_probe.port_8008_external[0].id
-  enable_floating_ip             = true
+  enable_floating_ip             = false
   disable_outbound_snat          = true
 }
 
@@ -513,7 +514,7 @@ resource "azurerm_lb_rule" "port_4500_external" {
   frontend_ip_configuration_name = azurerm_lb.external[0].frontend_ip_configuration[0].name
   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.external[0].id]
   probe_id                       = azurerm_lb_probe.port_8008_external[0].id
-  enable_floating_ip             = true
+  enable_floating_ip             = false
   disable_outbound_snat          = true
 }
 
