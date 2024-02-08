@@ -51,7 +51,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
     azurerm_network_interface.privateinterface[count.index].id,
     azurerm_network_interface.managementinterface[count.index].id
   ]
-  primary_network_interface_id = azurerm_network_interface.managementinterface[count.index].id
+  primary_network_interface_id = azurerm_network_interface.publicinterface[count.index].id
   vm_size                      = var.vm_size
 
   zones               = length(var.availability_zones) > 0 ? var.availability_zones : null
