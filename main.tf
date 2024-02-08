@@ -37,11 +37,20 @@ resource "azurerm_availability_set" "av" {
 }
 
 resource "azurerm_virtual_machine" "fortinetvm" {
-  count                        = 2
-  name                         = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
-  location                     = var.location
-  resource_group_name          = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
-  network_interface_ids        = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? [azurerm_network_interface.syncinterface[count.index].id, azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id] : [azurerm_network_interface.managementinterface[count.index].id, azurerm_network_interface.publicinterface[count.index].id, azurerm_network_interface.privateinterface[count.index].id]
+  count               = 2
+  name                = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
+  location            = var.location
+  resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
+  network_interface_ids = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? [
+    azurerm_network_interface.publicinterface[count.index].id,
+    azurerm_network_interface.privateinterface[count.index].id,
+    azurerm_network_interface.syncinterface[count.index].id,
+    azurerm_network_interface.managementinterface[count.index].id
+    ] : [
+    azurerm_network_interface.publicinterface[count.index].id,
+    azurerm_network_interface.privateinterface[count.index].id,
+    azurerm_network_interface.managementinterface[count.index].id
+  ]
   primary_network_interface_id = azurerm_network_interface.managementinterface[count.index].id
   vm_size                      = var.vm_size
 
