@@ -117,6 +117,12 @@ variable "fortigate_admin_port" {
   default     = 8443
 }
 
+variable "fortigate_cluster_name" {
+  type        = string
+  description = "Name of the FortiGate cluster"
+  default     = "AzureHA"
+}
+
 variable "fortigate_vnet_config" {
   type = object({
     vnet_address_space           = string
