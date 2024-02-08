@@ -115,7 +115,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
       publicPort_mask     = cidrnetmask(var.fortigate_vnet_config.public_subnet_address_space)
       privatePort_ip      = azurerm_network_interface.privateinterface[count.index].ip_configuration[0].private_ip_address
       privatePort_mask    = cidrnetmask(var.fortigate_vnet_config.private_subnet_address_space)
-      peerip              = count.index == 0 ? azurerm_network_interface.managementinterface[1].ip_configuration[0].private_ip_address : azurerm_network_interface.managementinterface[0].ip_configuration[0].private_ip_address
+      peerip              = count.index == 0 ? (var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[1].ip_configuration[0].private_ip_address : azurerm_network_interface.managementinterface[1].ip_configuration[0].private_ip_address) : (var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[0].ip_configuration[0].private_ip_address : azurerm_network_interface.managementinterface[0].ip_configuration[0].private_ip_address)
       peerPrio            = count.index == 0 ? 255 : 1
       mgmt_gateway_ip     = cidrhost(var.fortigate_vnet_config.ha_mgmt_subnet_address_space, 1)
       default_gateway     = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, 1)
