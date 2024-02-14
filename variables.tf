@@ -198,3 +198,28 @@ variable "deploy_load_balancer" {
   type        = bool
   default     = false
 }
+
+variable "vpn_ipsec_psk" {
+  type        = string
+  sensitive   = true
+  description = "PSK for an IPSEC VPN, can be used in custom config. Either encrypted with the prefix ENC or plain text - just like you would add it to your configuration."
+  default     = ""
+}
+
+variable "vpn_ipsec_interface" {
+  type        = string
+  description = "Interface to use for the IPSEC VPN, can be used in custom config"
+  default     = ""
+}
+
+variable "vpn_ipsec_remote_gw" {
+  type        = string
+  description = "Remote gateway for the IPSEC VPN, can be used in custom config"
+  default     = ""
+}
+
+variable "fortigate_additional_passwords" {
+  type      = list(string)
+  default   = []
+  sensitive = true
+}

@@ -105,30 +105,34 @@ resource "azurerm_virtual_machine" "fortinetvm" {
     admin_username = var.adminusername
     admin_password = var.adminpassword
     custom_data = var.skip_config ? null : templatefile(local.templatefilename, {
-      type                = var.license_type
-      license_file        = var.license_file
-      syncPort_ip         = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[count.index].ip_configuration[0].private_ip_address : ""
-      syncPort_mask       = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? cidrnetmask(var.fortigate_vnet_config.ha_sync_subnet_address_space) : ""
-      managementPort_ip   = azurerm_network_interface.managementinterface[count.index].ip_configuration[0].private_ip_address
-      managementPort_mask = cidrnetmask(var.fortigate_vnet_config.ha_mgmt_subnet_address_space)
-      publicPort_ip       = azurerm_network_interface.publicinterface[count.index].ip_configuration[0].private_ip_address
-      publicPort_mask     = cidrnetmask(var.fortigate_vnet_config.public_subnet_address_space)
-      privatePort_ip      = azurerm_network_interface.privateinterface[count.index].ip_configuration[0].private_ip_address
-      privatePort_mask    = cidrnetmask(var.fortigate_vnet_config.private_subnet_address_space)
-      peerip              = count.index == 0 ? (var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[1].ip_configuration[0].private_ip_address : azurerm_network_interface.managementinterface[1].ip_configuration[0].private_ip_address) : (var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[0].ip_configuration[0].private_ip_address : azurerm_network_interface.managementinterface[0].ip_configuration[0].private_ip_address)
-      peerPrio            = count.index == 0 ? 255 : 1
-      mgmt_gateway_ip     = cidrhost(var.fortigate_vnet_config.ha_mgmt_subnet_address_space, 1)
-      default_gateway     = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, 1)
-      tenant              = var.tenant_id
-      subscription        = var.subscription_id
-      clientid            = var.client_id
-      clientsecret        = var.client_secret
-      adminsport          = var.fortigate_admin_port
-      resourcegroup       = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
-      clusterip           = azurerm_public_ip.ClusterPublicIP.name
-      clusterName         = var.fortigate_cluster_name
-      routename           = azurerm_route_table.internal.name
-      hostname            = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
+      type                 = var.license_type
+      license_file         = var.license_file
+      syncPort_ip          = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[count.index].ip_configuration[0].private_ip_address : ""
+      syncPort_mask        = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? cidrnetmask(var.fortigate_vnet_config.ha_sync_subnet_address_space) : ""
+      managementPort_ip    = azurerm_network_interface.managementinterface[count.index].ip_configuration[0].private_ip_address
+      managementPort_mask  = cidrnetmask(var.fortigate_vnet_config.ha_mgmt_subnet_address_space)
+      publicPort_ip        = azurerm_network_interface.publicinterface[count.index].ip_configuration[0].private_ip_address
+      publicPort_mask      = cidrnetmask(var.fortigate_vnet_config.public_subnet_address_space)
+      privatePort_ip       = azurerm_network_interface.privateinterface[count.index].ip_configuration[0].private_ip_address
+      privatePort_mask     = cidrnetmask(var.fortigate_vnet_config.private_subnet_address_space)
+      peerip               = count.index == 0 ? (var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[1].ip_configuration[0].private_ip_address : azurerm_network_interface.managementinterface[1].ip_configuration[0].private_ip_address) : (var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[0].ip_configuration[0].private_ip_address : azurerm_network_interface.managementinterface[0].ip_configuration[0].private_ip_address)
+      peerPrio             = count.index == 0 ? 255 : 1
+      mgmt_gateway_ip      = cidrhost(var.fortigate_vnet_config.ha_mgmt_subnet_address_space, 1)
+      default_gateway      = cidrhost(var.fortigate_vnet_config.public_subnet_address_space, 1)
+      tenant               = var.tenant_id
+      subscription         = var.subscription_id
+      clientid             = var.client_id
+      clientsecret         = var.client_secret
+      adminsport           = var.fortigate_admin_port
+      resourcegroup        = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
+      clusterip            = azurerm_public_ip.ClusterPublicIP.name
+      clusterName          = var.fortigate_cluster_name
+      routename            = azurerm_route_table.internal.name
+      hostname             = join("-", [module.naming.linux_virtual_machine.name, count.index + 1])
+      additional_passwords = var.fortigate_additional_passwords
+      vpn_ipsec_psk        = var.vpn_ipsec_psk
+      vpn_ipsec_interface  = var.vpn_ipsec_interface
+      vpn_ipsec_remote_gw  = var.vpn_ipsec_remote_gw
     })
   }
 
