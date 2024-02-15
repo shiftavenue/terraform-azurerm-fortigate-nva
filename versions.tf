@@ -3,15 +3,15 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "3.82.0"
+      version = ">=3.82.0"
     }
     template = {
       source  = "hashicorp/template"
-      version = "2.2.0"
+      version = ">=2.2.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "3.5.1"
+      version = ">=3.5.1"
     }
   }
 }
@@ -19,5 +19,5 @@ terraform {
 module "naming" {
   source  = "Azure/naming/azurerm"
   suffix  = var.resource_suffix
-  version = "0.4.0"
+  version = ">=0.4.0"
 }
