@@ -241,7 +241,7 @@ resource "azurerm_network_security_group" "privatenetworknsg" {
   resource_group_name = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
 
   security_rule {
-    name                       = "All"
+    name                       = join("-", [module.naming.network_security_rule.name, "inbound"])
     priority                   = 1001
     direction                  = "Inbound"
     access                     = "Allow"
@@ -253,7 +253,7 @@ resource "azurerm_network_security_group" "privatenetworknsg" {
   }
 
   security_rule {
-    name                       = "All"
+    name                       = join("-", [module.naming.network_security_rule.name, "outbound"])
     priority                   = 1002
     direction                  = "Outbound"
     access                     = "Allow"
