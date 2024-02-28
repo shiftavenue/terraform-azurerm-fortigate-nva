@@ -221,6 +221,18 @@ resource "azurerm_network_security_group" "publicnetworknsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+
+  security_rule {
+    name                       = "TCP"
+    priority                   = 1002
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_network_security_group" "privatenetworknsg" {
@@ -240,34 +252,17 @@ resource "azurerm_network_security_group" "privatenetworknsg" {
     destination_address_prefix = "*"
   }
 
-}
-
-resource "azurerm_network_security_rule" "outgoing_public" {
-  name                        = join("-", [module.naming.network_security_group_rule.name, "public"])
-  priority                    = 100
-  direction                   = "Outbound"
-  access                      = "Allow"
-  protocol                    = "*"
-  source_port_range           = "*"
-  destination_port_range      = "*"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
-  network_security_group_name = azurerm_network_security_group.publicnetworknsg.name
-}
-
-resource "azurerm_network_security_rule" "outgoing_private" {
-  name                        = join("-", [module.naming.network_security_group_rule.name, "private"])
-  priority                    = 100
-  direction                   = "Outbound"
-  access                      = "Allow"
-  protocol                    = "*"
-  source_port_range           = "*"
-  destination_port_range      = "*"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = var.resource_group_name == "" ? module.naming.resource_group.name : var.resource_group_name
-  network_security_group_name = azurerm_network_security_group.privatenetworknsg.name
+  security_rule {
+    name                       = "All"
+    priority                   = 1002
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_network_interface" "managementinterface" {
