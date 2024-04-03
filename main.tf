@@ -376,7 +376,7 @@ resource "azurerm_route" "default" {
   address_prefix      = "0.0.0.0/0"
   next_hop_type       = "VirtualAppliance"
   # Unclear why Fortinet requires the next hop IP to be the active instance's IP
-  next_hop_in_ip_address = azurerm_network_interface.privateinterface[0].ip_configuration[0].private_ip_address
+  next_hop_in_ip_address = var.deploy_load_balancer ? cidrhost(var.fortigate_vnet_config.private_subnet_address_space, 4) :  azurerm_network_interface.privateinterface[0].ip_configuration[0].private_ip_address
 }
 
 resource "azurerm_subnet_route_table_association" "internalassociate" {
