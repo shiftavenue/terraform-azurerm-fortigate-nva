@@ -106,9 +106,9 @@ variable "skip_config" {
 }
 
 variable "license_file" {
-  type        = string
-  description = "Path to the license file to use for BYOL"
-  default     = ""
+  type        = list(string)
+  description = "Path to the license files to use for BYOL. First for primary, second for secondary. If not set, PAYG will be used"
+  default     = []
 }
 
 variable "fortigate_admin_port" {
