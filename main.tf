@@ -106,7 +106,7 @@ resource "azurerm_virtual_machine" "fortinetvm" {
     admin_password = var.adminpassword
     custom_data = var.skip_config ? null : templatefile(local.templatefilename, {
       type                 = var.license_type
-      license_file         = var.license_file[count.index]
+      license_file         = var.license_type == "byol" && length(var.license_file) > 0 ? var.license_file[count.index] : ""
       syncPort_ip          = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? azurerm_network_interface.syncinterface[count.index].ip_configuration[0].private_ip_address : ""
       syncPort_mask        = var.fortigate_vnet_config.ha_sync_subnet_address_space != "" ? cidrnetmask(var.fortigate_vnet_config.ha_sync_subnet_address_space) : ""
       managementPort_ip    = azurerm_network_interface.managementinterface[count.index].ip_configuration[0].private_ip_address
