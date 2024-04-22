@@ -1,7 +1,7 @@
 resource "azurerm_marketplace_agreement" "fortinet" {
   publisher = var.vm_publisher
   offer     = var.vm_offer
-  plan      = var.license_type == "payg" ? "fortinet_fg-vm_payg_2022" : "fortinet_fg-vm"
+  plan      = var.license_type == "payg" ? var.fgtsku["payg"] : var.fgtsku["byol"]
 }
 
 resource "azurerm_resource_group" "fortinetrg" {
