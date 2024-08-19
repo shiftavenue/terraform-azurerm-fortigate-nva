@@ -181,6 +181,12 @@ variable "assign_managed_identity" {
   default     = true
 }
 
+variable "assign_system_managed_identity" {
+  type        = bool
+  description = "Assign a ystem-assigned managed identity to the FortiGate VM"
+  default     = true
+}
+
 variable "availability_zones" {
   type        = list(string)
   description = "Availability zones to use for the FortiGate VMs. Why a list of string for numbers? Well."

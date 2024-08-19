@@ -60,10 +60,25 @@ resource "azurerm_virtual_machine" "fortinetvm" {
   depends_on = [azurerm_storage_account.fortinetstorageaccount, azurerm_marketplace_agreement.fortinet]
 
   dynamic "identity" {
-    for_each = var.assign_managed_identity ? toset([1]) : toset([])
+    for_each = var.assign_managed_identity && !var.assign_system_managed_identity ? toset([1]) : toset([])
     content {
       identity_ids = [azurerm_user_assigned_identity.umi[0].id]
       type         = "UserAssigned"
+    }
+  }
+
+  dynamic "identity" {
+    for_each = var.assign_system_managed_identity && !var.assign_managed_identity ? toset([1]) : toset([])
+    content {
+      type = "SystemAssigned"
+    }
+  }
+
+  dynamic "identity" {
+    for_each = var.assign_system_managed_identity && var.assign_managed_identity ? toset([1]) : toset([])
+    content {
+      identity_ids = [azurerm_user_assigned_identity.umi[0].id]
+      type         = "SystemAssigned, UserAssigned"
     }
   }
 
